@@ -1,5 +1,6 @@
 import React from 'react';
-import { Vibration, StyleSheet, Text, View, Button, TouchableOpacity, Pressable } from 'react-native';
+import { Component } from 'react';
+import { Vibration, StyleSheet, Text, View, Button, TouchableOpacity, Pressable, Modal, TextInput } from 'react-native';
 
 function vibrate() { Vibration.vibrate([500, 500, 500]); }
 function lightVibrate() { Vibration.vibrate(300); }
@@ -13,15 +14,116 @@ function lightVibrate() { Vibration.vibrate(300); }
  * warm coral:rgb(188, 86, 73)
  */
 
-export default class App extends React.Component {
+export default class App extends React.Component
+{
+  constructor(props)
+  {
+    super(props); // Calls the parent class constructor
+
+    // Initialize state
+    this.state = {
+      time: 25 * 60,  // Initial time (25 minutes in seconds) = 1500 seconds
+      isRunning: false, // Timer is not running initially
+      intervalId: null, // No interval set initially
+      isModalVisible: false, // Modal pops up onPress
+      selectedTimer: '', // Which timer is selected: focus, break, or longBreak
+      inputTime: '', // The time the user inputs
+    };
+  }
+
+  /* Functions **/
+
+  // Handles timer clicks
+  handleTimerPress = (timerType) => {
+    this.setState({
+    isModalVisible: true, // Show Modal
+    selectedTimer: timerType, // Know which timer was clicked
+    });
+  };
+
+  // Handles modalOK
+  handleSubmitTime = () => {
+    const { selectedTimer, inputTime } = this.state;
+    const newTimeInSeconds = parseInt(inputTime, 10) * 60;
+
+    if (selectedTimer === 'focus')
+    {
+      this.setState({ focusTime: newTimeInSeconds, time: newTimeInSeconds, });
+    }
+    else if (selectedTimer === 'break') 
+    {
+      this.setState({ breakTime: newTimeInSeconds, time: newTimeInSeconds, });
+    }
+    else
+    {
+      this.setState({ longBreakTime: newTimeInSeconds, time: newTimeInSeconds, });
+    }
+
+    // Hide the modal after submission and reset input time
+    this.setState({ isModalVisible: false, inputTime: '' });
+  }
+
+  // Helper function to format seconds to mm:ss and display to user
+  formatTime = () => {
+    const minutes = Math.floor(seconds/60);
+    const remainingSeconds = seconds % 60;
+
+    return `${minutes < 10 ? '0' : ''}${minutes}:${remainingSeconds < 10 ? '0' : ''}`;
+  }
+
+  // Starts the timer if it is paused
+  start = () => { // TODO
+    // If timer is !running, use setInterval() to start countdown. This calls decrementTime every second
+    // If timer is already running, make the button greyed out and unclickable
+  }
+
+  // Pauses the timer if it is running
+  stop = () => { // TODO
+
+  }
+  
+  // Vibrate helper functions
+  vibrate = () => { Vibration.vibrate([500, 500, 500]); }
+  lightVibrate = () => { Vibration.vibrate(300); }
+
   render() {
     return (
       <View style={styles.container}>
+
+        <Modal
+          transparent={true}
+          visible={this.state.isModalVisible}
+          animationType='fade'
+          onRequestClose={() => this.setState({ isModalVisible: false, })}>
+
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Enter new time for {this.state.selectedTimer}</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder='Enter time in minutes'
+                keyboardType='numeric'
+                onChangeText={(text) => this.setState({ inputTime: text, })}
+                value={this.state.inputTime}
+              />
+
+              <Pressable onPress={this.handleTimerPress}>
+                <Text style={styles.modalOption}>OK</Text>
+              </Pressable>
+
+              <Pressable style={styles.modalOption} onPress={() => this.setState({ isModalVisible: false })}>
+                <Text>CANCEL</Text>
+              </Pressable>
+
+            </View>
+          </View>
+        </Modal>
+
         <View style={styles.timerContainer}>
           <Text style={styles.label}>POMODORO TIMER</Text>
 
           <View style={styles.timePill}>
-            <Text style={styles.time}>25:00</Text>
+            <Text style={styles.time}>{this.formatTime(this.state.time)}</Text>
           </View>
           
           <View style={styles.btnView}>
@@ -34,7 +136,7 @@ export default class App extends React.Component {
         <View style={styles.timersView}>
           {/* Each timerBtn a timer that can be changed and each View between them is a divider */}  
           <View style={styles.timerBtnView}>
-            <Pressable style={styles.timerBtn}>
+            <Pressable style={styles.timerBtn} onPress={() => this.handleTimerPress('focus')}>
               <Text style={styles.timerText}>Focus{'\n'}25{'\n'}min</Text>
             </Pressable>
           </View>
@@ -42,7 +144,7 @@ export default class App extends React.Component {
           <View style={styles.dividerVertical}></View>
 
           <View style={styles.timerBtnView}>
-            <Pressable style={styles.timerBtn}>
+            <Pressable style={styles.timerBtn} onPress={() => this.handleTimerPress('break')}>
               <Text style={styles.timerText}>Break{'\n'}5{'\n'}min</Text>
             </Pressable>
           </View>
@@ -50,7 +152,7 @@ export default class App extends React.Component {
           <View style={styles.dividerVertical}></View>
 
           <View style={styles.timerBtnView}>
-            <Pressable style={styles.timerBtn}>
+            <Pressable style={styles.timerBtn} onPress={() => this.handleTimerPress('longBreak')}>
                 <Text style={styles.timerText}>Long{'\n'}Break{'\n'}15{'\n'}min</Text>
             </Pressable>
           </View>
@@ -74,7 +176,7 @@ const styles = StyleSheet.create(
   label: {
     textAlign: 'center',
     fontSize: 45,
-    color: '#F8DFC2',
+    color: '#F8DFC2', // Cream
     marginBottom: 10,
     marginTop: 30,
     fontWeight: 'bold',
@@ -164,4 +266,36 @@ const styles = StyleSheet.create(
     height: '100%',
     marginHorizontal: 8,
   },
+
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)' // semi-transparent background
+  },
+
+  modalContent: {
+    backgroundColor: 'rgb(133, 55, 34)',
+    padding: 20,
+    borderRadius: 15,
+    width: 300,
+    alignItems: 'center',
+  },
+
+  modalTitle: {
+    color: '#F8DFC2',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+
+  modalInput: {
+    width: '80%',
+    height: 40,
+    borderColor: 'black',
+    borderWidth: 1, 
+    marginBottom: 20, 
+    paddingHorizontal: 10,
+    color: '#F8DFC2',
+  }
 });
