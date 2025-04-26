@@ -90,57 +90,53 @@ export default class App extends React.Component {
   
 
   // Helper function to cycle timers
-  switchToNextTimer = (nextTimer) => {
-    this.setState(
-      (prevState) => {
-        let newCycles = prevState.cycles;
-  
-        if (prevState.selectedTimer === 'focus') {
-          // Only increment cycles when a focus session ends
-          newCycles++;
-        }
-  
-        if (nextTimer === 'longBreak') {
-          newCycles = 0; // After long break, reset cycles
-        }
-  
-        return {
-          selectedTimer: nextTimer,
-          cycles: newCycles,
-        };
-      },
-      () => {
-        // Reset timer AFTER switching timer and cycles
-        let newTime;
-        if (this.state.selectedTimer === 'focus') 
-        {
-          newTime = this.state.focusTime;
-        } 
-        else if (this.state.selectedTimer === 'break') 
-        {
-          newTime = this.state.breakTime;
-        } 
-        else 
-        {
-          newTime = this.state.longBreakTime;
-        }
-  
+    switchToNextTimer = (nextTimer) => {
         this.setState(
-          {
-            time: newTime,
-            isRunning: false,
-            intervalId: null,
-            isStartDisabled: false,
-            isPauseDisabled: true,
-            isResetDisabled: true,
-          },
-          () => {
-            this.start();
+          (prevState) => {
+            let newCycles = prevState.cycles;
+    
+            // If selected timer is focus and its on the fourth cycle, start a longBreak and reset cycles
+            if (prevState.selectedTimer === 'focus') 
+            {
+              newCycles++; // Only increment cycles when a focus session ends
+            }
+    
+              if (nextTimer === 'longBreak') {
+              newCycles = 0; // After long break, reset cycles
+            }
+    
+            return {
+                selectedTimer: nextTimer,
+                cycles: newCycles,
+              };
+            },
+            () => {
+             // Reset timer AFTER switching timer and cycles
+            let newTime;
+            if (this.state.selectedTimer === 'focus')
+            {
+              newTime = this.state.focusTime;
+            }
+              else if (this.state.selectedTimer === 'break')
+            {
+              newTime = this.state.breakTime;
+            }
+            else
+            {
+              newTime = this.state.longBreakTime;
+            }
+    
+            this.setState({
+              time: newTime,
+              isRunning: false,
+              intervalId: null,
+              isStartDisabled: false, // Enable start button for the new timer
+              isPauseDisabled: true,
+              isResetDisabled: true,
+            });
           }
         );
-      }
-    );
-  };
+      };
   
   // Starts the timer if it is paused
   start = () => {
@@ -151,27 +147,26 @@ export default class App extends React.Component {
         {
           this.setState(prevState => ({ time: prevState.time - 1 }));
         } 
-        else 
+        else
         {
           clearInterval(this.state.intervalId);
           this.vibrate();
-          
+
           // Cycle through the timers
-          // If selected timer is focus and its on the fourth cycle, start a longBreak and reset cycles
           if (this.state.selectedTimer === 'focus' && this.state.cycles === 4)
           {
-            this.switchToNextTimer('longBreak');
+             this.switchToNextTimer('longBreak');
           }
-          else if (this.state.selectedTimer === 'focus') // Else if it is focus but cycles < 4 start a break and increment cycles
+           else if (this.state.selectedTimer === 'focus') // Else if it is focus but cycles < 4 start a break and increment cycles
           {
             this.switchToNextTimer('break');
           }
-          else if (this.state.selectedTimer === 'break' || this.state.selectedTimer === 'longBreak')
+           else if (this.state.selectedTimer === 'break' || this.state.selectedTimer === 'longBreak')
           {
-            this.switchToNextTimer('focus')
-          }
+           this.switchToNextTimer('focus')
+           }
         }
-      }, 1000);
+      }, 1); // <--- DEBUG: DONT FORGET TO SET TO 1000 AGAIN!!!!!!!!!!!!!!!
       this.setState({ isRunning: true, intervalId, isStartDisabled: true, isPauseDisabled: false, isResetDisabled: true }); // Update States
     }
   };
@@ -226,7 +221,20 @@ export default class App extends React.Component {
     });
   };
   
-  
+  setToDefault = (selectedTimer) => {
+    if (selectedTimer === 'focus')
+    {
+      this.setState({ focusTime: 25 * 60 }); // Default focus time in seconds (25 mins)
+    }
+    else if (selectedTimer === 'break')
+    {
+      this.setState({ breakTime: 5 * 60 }); // Default break time in seconds (5 mins)
+    }
+    else
+    {
+      this.setState({ longBreakTime: 15 * 60 }); // Default longBreak time in seconds (15 mins)
+    }
+  }
 
   render() {
     return (
@@ -254,7 +262,7 @@ export default class App extends React.Component {
               <Pressable style={styles.modalOption} onPress={() => this.setState({ isModalVisible: false })}>
                 <Text>CANCEL</Text>
               </Pressable>
-              <Pressable style={styles.modalOption}>
+              <Pressable style={styles.modalOption} onPress={this.setToDefault(this.state.selectedTimer)}>
                 <Text>DEFAULT</Text>
               </Pressable>
             </View>
